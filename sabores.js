@@ -15,7 +15,7 @@ const SABORES = [
   "Roquefort y jamón",
   "Brócoli y ricota",
   "Primavera",
-  "Capresse/Tomate y albahaca",
+  "Tomate y albahaca",
   "Cantimpalo",
   "Verdura y salsa blanca",
   "Humita",
