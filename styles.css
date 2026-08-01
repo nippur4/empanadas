@@ -1,5 +1,9 @@
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#f7f7f5;color:#1a1a1a;min-height:100vh}
+html{height:100%}
+/* iOS Safari: 100vh incluye el área bajo la barra de herramientas y provoca
+   saltos/rebote al hacer scroll. Usamos 100dvh (con fallback a 100vh) y
+   frenamos el overscroll para que el body quede fijo en su lugar. */
+body{font-family:'Segoe UI',sans-serif;background:#f7f7f5;color:#1a1a1a;min-height:100vh;min-height:100dvh;overscroll-behavior-y:none;-webkit-text-size-adjust:100%}
 
 /* ── Botones ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
@@ -12,7 +16,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f7f7f5;color:#1a1a1a;min-heig
 .badge{display:inline-block;background:#f0f0ee;color:#555;border-radius:99px;font-size:12px;padding:2px 9px;font-weight:600}
 
 /* ── Vistas ── */
-.view{display:none;min-height:100vh;flex-direction:column}
+.view{display:none;min-height:100vh;min-height:100dvh;flex-direction:column}
 .view.active{display:flex}
 
 /* ── Landing ── */

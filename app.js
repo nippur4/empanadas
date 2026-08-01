@@ -97,7 +97,9 @@ function setStatus(msg) {
 }
 
 function updateHostUI() {
-  document.getElementById("linkBar").style.display       = isReadonly ? "none" : "flex";
+  // El link se muestra también a los no organizadores en sesiones en vivo,
+  // para que puedan copiarlo y sumar más gente. Sólo se oculta en historial.
+  document.getElementById("linkBar").style.display       = isHistory  ? "none" : "flex";
   document.getElementById("resetBtn").style.display      = isReadonly ? "none" : "inline-flex";
   document.getElementById("orderBtn").style.display      = isHistory  ? "none" : "inline-flex";
   document.getElementById("readonlyBadge").style.display = isReadonly ? "inline-block" : "none";
@@ -258,6 +260,9 @@ async function saveEditOrder() {
   });
   if (!total) { alert("El pedido debe tener al menos una empanada."); return; }
 
+  const invalidos = saboresConCaracterInvalido(pedido);
+  if (invalidos.length) { alert(mensajeSaboresInvalidos(invalidos)); return; }
+
   const key = nickToKey(editNick);
   const btn = document.querySelector("#editModal .btn-success");
   btn.innerHTML = `<span class="spinner"></span>&nbsp;Guardando…`;
@@ -266,8 +271,10 @@ async function saveEditOrder() {
     await db.ref(`orders/${sessionCode}/${key}`).update({ pedido, total });
     closeMO("editModal");
   } catch (err) {
-    alert("Error al guardar los cambios. Intentá de nuevo.");
     console.error(err);
+    alert(esErrorClaveInvalida(err)
+      ? "No se pudieron guardar los cambios: uno de los sabores tiene un carácter no permitido ( . # $ / [ ] ). Corregí ese sabor en la lista."
+      : "Error al guardar los cambios. Intentá de nuevo.");
   } finally {
     btn.innerHTML = "Guardar ✓";
     btn.disabled = false;
@@ -473,6 +480,9 @@ async function submitOrder() {
   });
   if (!total) { alert("Seleccioná al menos una empanada."); return; }
 
+  const invalidos = saboresConCaracterInvalido(pedido);
+  if (invalidos.length) { alert(mensajeSaboresInvalidos(invalidos)); return; }
+
   const btn = document.getElementById("submitBtn");
   btn.innerHTML = `<span class="spinner"></span>&nbsp;Guardando…`;
   btn.disabled = true;
@@ -483,7 +493,9 @@ async function submitOrder() {
     showView("successView");
   } catch (err) {
     console.error("Error al guardar pedido:", err);
-    alert("Error al guardar. Revisá tu conexión e intentá de nuevo.");
+    alert(esErrorClaveInvalida(err)
+      ? "No se pudo guardar: uno de los sabores tiene un carácter no permitido ( . # $ / [ ] ). Avisale al organizador para que lo corrija."
+      : "Error al guardar. Revisá tu conexión e intentá de nuevo.");
     btn.innerHTML = "Guardar pedido ✓";
     btn.disabled = false;
   }
@@ -513,6 +525,26 @@ function genCode() {
 
 function nickToKey(nick) {
   return nick.toLowerCase().replace(/[^a-z0-9]/g, "_");
+}
+
+// Firebase Realtime Database usa los nombres de sabor como CLAVES y prohíbe
+// estos caracteres en las claves: . # $ / [ ]
+// Devuelve la lista de sabores del pedido que romperían el guardado.
+const FIREBASE_INVALID_KEY = /[.#$/\[\]]/;
+function saboresConCaracterInvalido(pedido) {
+  return Object.keys(pedido).filter(s => FIREBASE_INVALID_KEY.test(s));
+}
+
+// Mensaje claro para el usuario cuando un sabor tiene un carácter no permitido.
+function mensajeSaboresInvalidos(invalidos) {
+  return "No se pudo guardar porque estos sabores tienen caracteres no permitidos " +
+         "( . # $ / [ ] ):\n\n• " + invalidos.join("\n• ") +
+         "\n\nAvisale al organizador para que corrija esos sabores.";
+}
+
+// Detecta si un error de Firebase es por una clave inválida (carácter especial).
+function esErrorClaveInvalida(err) {
+  return /invalid key|contains an invalid|first argument contains/i.test(err?.message || "");
 }
 
 function closeMO(id, e) {
